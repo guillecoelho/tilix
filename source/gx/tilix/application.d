@@ -72,6 +72,8 @@ import gx.tilix.common;
 import gx.tilix.constants;
 import gx.tilix.preferences;
 import gx.tilix.shortcuts;
+import gx.tilix.claudestatus;
+import gx.tilix.terminal.terminal : Terminal;
 
 import gx.tilix.bookmark.manager;
 
@@ -356,13 +358,28 @@ private:
     int onCommandLine(Scoped!ApplicationCommandLine acl, GApplication) {
         trace("App processing command line");
         scope (exit) {
-            cp.clear();
             acl.setExitStatus(cp.exitCode);
+            cp.clear();
 //            acl.destroy();
         }
         cp = CommandParameters(acl);
         if (cp.exit) {
             return cp.exitCode;
+        }
+        if (cp.hasClaudeStatus) {
+            ClaudeStatus state;
+            if (!acl.getIsRemote() || cp.terminalUUID.length == 0 ||
+                !parseClaudeStatus(cp.claudeStatus, state)) {
+                cp.exitCode = 2;
+                return cp.exitCode;
+            }
+            Terminal terminal = cast(Terminal) findWidgetForUUID(cp.terminalUUID);
+            if (terminal is null) {
+                cp.exitCode = 2;
+                return cp.exitCode;
+            }
+            terminal.claudeStatus = state;
+            return 0;
         }
         if (cp.exitCode == 0 && cp.action.length > 0) {
             string terminalUUID = cp.terminalUUID;
@@ -679,6 +696,7 @@ private:
         addMainOption(CMD_WORKING_DIRECTORY, 'w', GOptionFlags.NONE, GOptionArg.STRING, _("Set the working directory of the terminal"), _("DIRECTORY"));
         addMainOption(CMD_PROFILE, 'p', GOptionFlags.NONE, GOptionArg.STRING, _("Set the starting profile"), _("PROFILE_NAME"));
         addMainOption(CMD_TITLE, 't', GOptionFlags.NONE, GOptionArg.STRING, _("Set the title of the new terminal"), _("TITLE"));
+        addMainOption(CMD_CLAUDE_STATUS, '\0', GOptionFlags.NONE, GOptionArg.STRING, _("Set Claude Code status for this terminal"), _("STATUS"));
         addMainOption(CMD_SESSION, 's', GOptionFlags.NONE, GOptionArg.STRING_ARRAY, _("Open the specified session"), _("SESSION_NAME"));
         if (Version.checkVersion(3, 16, 0).length ==0) {
             addMainOption(CMD_ACTION, 'a', GOptionFlags.NONE, GOptionArg.STRING, _("Send an action to current Tilix instance"), _("ACTION_NAME"));

@@ -51,6 +51,7 @@ static import gx.util.array;
 import gx.gtk.threads;
 
 import gx.tilix.common;
+import gx.tilix.claudestatusindicator;
 import gx.tilix.preferences;
 import gx.tilix.session;
 
@@ -412,6 +413,11 @@ public:
         }
     }
 
+    void updateClaudeStatus(Session session) {
+        SideBarRow row = getRow(session.uuid);
+        if (row !is null) row.updateClaudeStatus(session);
+    }
+
 //Events
 public:
 
@@ -466,6 +472,7 @@ private:
     Button btnClose;
     Image img;
     Label lblName;
+    ClaudeStatusIndicator claudeStatusIndicator;
     Label lblNCount;
     EventBox evNotification;
     AspectFrame afNotification;
@@ -531,6 +538,8 @@ private:
         Box b = new Box(Orientation.HORIZONTAL, 4);
         b.setHexpand(true);
         b.add(lblName);
+        claudeStatusIndicator = new ClaudeStatusIndicator();
+        b.add(claudeStatusIndicator);
         grid.attach(b, 1, 2, 1, 1);
 
         lblIndex = new Label(format("%d", 0));
@@ -579,6 +588,7 @@ private:
         // Fix #1637
         _sessionUUID = session.uuid;
         lblName.setText(session.displayName);
+        updateClaudeStatus(session);
         if (session.uuid in notifications) {
             SessionNotification sn = notifications[session.uuid];
             lblNCount.setText(format("%d", sn.messages.length));
@@ -594,6 +604,10 @@ private:
         } else {
             afNotification.hide();
         }
+    }
+
+    void updateClaudeStatus(Session session) {
+        claudeStatusIndicator.update(session.claudeSummary);
     }
 
     void onRowDragBegin(DragContext dc, Widget widget) {

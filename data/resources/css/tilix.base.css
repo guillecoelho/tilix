@@ -31,6 +31,18 @@
     padding: 2px 4px;
 }
 
+.tilix-claude-working {
+    color: #3584e4;
+}
+
+.tilix-claude-waiting {
+    color: #e5a50a;
+}
+
+.tilix-claude-idle {
+    color: #888a85;
+}
+
 .tilix-notebook-page {
     background-color: @theme_bg_color;
 }

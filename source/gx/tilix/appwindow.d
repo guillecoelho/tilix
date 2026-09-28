@@ -100,6 +100,7 @@ import gx.i18n.l10n;
 import gx.tilix.application;
 import gx.tilix.closedialog;
 import gx.tilix.cmdparams;
+import gx.tilix.claudestatusindicator;
 import gx.tilix.common;
 import gx.tilix.constants;
 import gx.tilix.customtitle;
@@ -1013,6 +1014,15 @@ private:
 
     void onSessionStateChange(Session session, SessionStateChange stateChange) {
         //tracef("State change received %d", stateChange);
+        if (stateChange == SessionStateChange.CLAUDE_STATUS) {
+            if (useTabs) {
+                SessionTabLabel label = cast(SessionTabLabel) nb.getTabLabel(session);
+                if (label !is null) label.updateClaudeStatus();
+            } else {
+                sb.updateClaudeStatus(session);
+            }
+            return;
+        }
         if (getCurrentSession() == session) {
             updateUIState();
             updateTitle();
@@ -2102,6 +2112,7 @@ private:
     AspectFrame afNotifications;
 	Label lblText;
     Label lblNotifications;
+    ClaudeStatusIndicator claudeStatusIndicator;
 	Session session;
     Image imgNewOutput;
     EventBox lblBox;
@@ -2139,9 +2150,10 @@ public:
 
         stTitle = new Stack();
 
-		lblText = new Label(text);
+        lblText = new Label(text);
         lblText.setEllipsize(PangoEllipsizeMode.START);
-		lblText.setWidthChars(10);
+        lblText.setWidthChars(10);
+        claudeStatusIndicator = new ClaudeStatusIndicator();
         updatePositionType(position);
 
 
@@ -2194,6 +2206,8 @@ public:
         }
 
         add(stTitle);
+        add(claudeStatusIndicator);
+        updateClaudeStatus();
 
         imgNewOutput = new Image("view-list-symbolic", IconSize.MENU);
         imgNewOutput.setNoShowAll(true);
@@ -2223,9 +2237,13 @@ public:
 		return lblText.getText();
 	}
 
-	@property void text(string value) {
-		lblText.setText(value);
-	}
+    @property void text(string value) {
+        lblText.setText(value);
+    }
+
+    void updateClaudeStatus() {
+        claudeStatusIndicator.update(session.claudeSummary);
+    }
 
     @property bool showNewOutput() {
         return imgNewOutput.isVisible();
@@ -2258,11 +2276,13 @@ public:
             lblText.setAngle(position==PositionType.LEFT?90:270);
             lblText.setHexpand(false);
             lblText.setVexpand(true);
+            claudeStatusIndicator.setAngle(position==PositionType.LEFT?90:270);
         } else {
             setOrientation(Orientation.HORIZONTAL);
             lblText.setAngle(0);
             lblText.setHexpand(true);
             lblText.setVexpand(false);
+            claudeStatusIndicator.setAngle(0);
         }
     }
 

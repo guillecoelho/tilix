@@ -27,6 +27,7 @@ enum CMD_COMMAND = "command";
 // See app.d for more info.
 enum CMD_EXECUTE = "execute";
 enum CMD_ACTION = "action";
+enum CMD_CLAUDE_STATUS = "claude-status";
 enum CMD_TERMINAL_UUID = "terminalUUID";
 enum CMD_MAXIMIZE = "maximize";
 enum CMD_MINIMIZE = "minimize";
@@ -66,6 +67,8 @@ private:
     string _profileName;
     string[] _session;
     string _action;
+    string _claudeStatus;
+    bool _hasClaudeStatus;
     string _command;
     string _cmdLine;
     string _terminalUUID;
@@ -180,6 +183,8 @@ public:
         _title = getValue(vd, CMD_TITLE, vts);
         _command = getValue(vd, CMD_COMMAND, vts);
         _action = getValue(vd, CMD_ACTION, vts);
+        _hasClaudeStatus = vd.contains(CMD_CLAUDE_STATUS);
+        _claudeStatus = getValue(vd, CMD_CLAUDE_STATUS, vts);
         _windowStyle = getValue(vd, CMD_WINDOW_STYLE, vts);
         _group = getValue(vd, CMD_GROUP, vts);
         if (_session.length > 0 && (_profileName.length > 0 || _workingDir.length > 0 || _command.length > 0)) {
@@ -236,6 +241,8 @@ public:
         _profileName.length = 0;
         _session.length = 0;
         _action.length = 0;
+        _claudeStatus.length = 0;
+        _hasClaudeStatus = false;
         _command.length = 0;
         _exitCode = 0;
         _cmdLine.length = 0;
@@ -289,6 +296,14 @@ public:
         return _action;
     }
 
+    @property bool hasClaudeStatus() {
+        return _hasClaudeStatus;
+    }
+
+    @property string claudeStatus() {
+        return _claudeStatus;
+    }
+
     @property string command() {
         return _command;
     }
@@ -327,6 +342,10 @@ public:
 
     @property int exitCode() {
         return _exitCode;
+    }
+
+    @property void exitCode(int value) {
+        _exitCode = value;
     }
 
     @property Geometry geometry() {

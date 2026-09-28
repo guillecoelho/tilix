@@ -59,6 +59,7 @@ import gx.util.array;
 
 import gx.tilix.application;
 import gx.tilix.appwindow;
+import gx.tilix.claudestatus;
 import gx.tilix.common;
 import gx.tilix.constants;
 import gx.tilix.preferences;
@@ -71,7 +72,8 @@ enum SessionStateChange {
     TERMINAL_FOCUSED,
     TERMINAL_TITLE,
     TERMINAL_OUTPUT,
-    SESSION_TITLE
+    SESSION_TITLE,
+    CLAUDE_STATUS
 };
 
 /**
@@ -301,6 +303,7 @@ private:
         terminal.onSyncInput.connect(&onTerminalSyncInput);
         terminal.onRequestStateChange.connect(&onTerminalRequestStateChange);
         terminal.onTitleChange.connect(&onTerminalTitleChange);
+        terminal.onClaudeStatusChange.connect(&onTerminalClaudeStatusChange);
         terminal.onProcessNotification.connect(&onTerminalProcessNotification);
         terminal.onIsActionAllowed.connect(&onTerminalIsActionAllowed);
         terminal.onSessionAttach.connect(&onTerminalSessionAttach);
@@ -312,6 +315,8 @@ private:
         foreach (t; terminals) {
             t.isSingleTerminal = (terminals.length == 1);
         }
+        if (terminal.claudeStatus != ClaudeStatus.NONE)
+            notifySessionStateChange(SessionStateChange.CLAUDE_STATUS);
     }
 
     /**
@@ -369,6 +374,7 @@ private:
      * Removes all references to the terminal from the session
      */
     void removeTerminalReferences(Terminal terminal) {
+        bool hadClaudeStatus = terminal.claudeStatus != ClaudeStatus.NONE;
         if (currentTerminal == terminal)
             currentTerminal = null;
         //Remove terminal
@@ -383,10 +389,13 @@ private:
         terminal.onSyncInput.disconnect(&onTerminalSyncInput);
         terminal.onRequestStateChange.disconnect(&onTerminalRequestStateChange);
         terminal.onTitleChange.disconnect(&onTerminalTitleChange);
+        terminal.onClaudeStatusChange.disconnect(&onTerminalClaudeStatusChange);
         terminal.onProcessNotification.disconnect(&onTerminalProcessNotification);
         terminal.onIsActionAllowed.disconnect(&onTerminalIsActionAllowed);
         terminal.onSessionAttach.disconnect(&onTerminalSessionAttach);
         terminal.onNewOutput.disconnect(&onTerminalNewOutput);
+        if (hadClaudeStatus)
+            notifySessionStateChange(SessionStateChange.CLAUDE_STATUS);
     }
 
     /**
@@ -670,6 +679,10 @@ private:
         if (terminal == currentTerminal) {
             onStateChange.emit(this, SessionStateChange.TERMINAL_TITLE);
         }
+    }
+
+    void onTerminalClaudeStatusChange(Terminal terminal) {
+        notifySessionStateChange(SessionStateChange.CLAUDE_STATUS);
     }
 
     /**
@@ -1221,6 +1234,13 @@ public:
         // If it is using Default from preferences localize it
         if (result == "Default") return _("Default");
         else return result;
+    }
+
+    @property ClaudeSummary claudeSummary() {
+        ClaudeStatus[] states;
+        foreach (terminal; terminals)
+            states ~= terminal.claudeStatus;
+        return summarizeClaudeStatus(states);
     }
 
     /**

@@ -33,6 +33,35 @@ Tilix is a tiling terminal emulator which uses the VTE GTK+ 3 widget with the fo
 * Experimental trigger support (Requires patched VTE, see [wiki](https://github.com/gnunn1/tilix/wiki/Automatic-(Triggered)-Profile-Switching))
 * Experimental badge support (Requires patched VTE, see [wiki](https://github.com/gnunn1/tilix/wiki/Badges))
 
+### Claude Code session status
+
+Tilix can show whether Claude Code is working, waiting for permission, or idle in each tab and in the session sidebar. A tab with split terminals shows the state that needs attention first: Waiting, then Working, then Idle. This integration is optional and uses [Claude Code hooks](https://code.claude.com/docs/en/hooks).
+
+After installing a Tilix build with this feature, merge the following entries into the `hooks` object in `~/.claude/settings.json`. Keep any hooks you already have. Claude Code must run directly in a local Tilix terminal so its hooks inherit `TILIX_ID`.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "tilix --claude-status=idle >/dev/null 2>&1 || true"}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "tilix --claude-status=working >/dev/null 2>&1 || true"}]}],
+    "PermissionRequest": [{"hooks": [{"type": "command", "command": "tilix --claude-status=waiting >/dev/null 2>&1 || true"}]}],
+    "Notification": [{"matcher": "permission_prompt", "hooks": [{"type": "command", "command": "tilix --claude-status=waiting >/dev/null 2>&1 || true"}]}],
+    "PostToolUse": [{"hooks": [{"type": "command", "command": "tilix --claude-status=working >/dev/null 2>&1 || true"}]}],
+    "PostToolUseFailure": [{"hooks": [{"type": "command", "command": "tilix --claude-status=working >/dev/null 2>&1 || true"}]}],
+    "PermissionDenied": [{"hooks": [{"type": "command", "command": "tilix --claude-status=working >/dev/null 2>&1 || true"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "tilix --claude-status=idle >/dev/null 2>&1 || true"}]}],
+    "StopFailure": [{"hooks": [{"type": "command", "command": "tilix --claude-status=idle >/dev/null 2>&1 || true"}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "tilix --claude-status=clear >/dev/null 2>&1 || true"}]}]
+  }
+}
+```
+
+Start a new Claude Code session after saving the settings. To remove the integration, delete these Tilix command entries from `hooks` and leave your other hooks in place.
+
+For a local Meson build that is not installed, the `tilix` command above still runs the system version. Use the absolute path to `build/builddir/tilix` in each hook command. To test alongside an installed Tilix, add `--group=claudedev` to both the launch command and each hook command. The build's CSS also needs its resource bundle ahead of the installed one in `XDG_DATA_DIRS`.
+
+The indicator reflects Claude Code's main turn. Sandbox network permission prompts use a notification hook that fires after about six seconds, so their indicator may briefly remain Working. Waiting can remain visible until another hook runs after permission approval. `Stop` can show Idle while background tasks continue. If Claude Code is killed before `SessionEnd` runs, the indicator remains until another hook updates it or the Tilix terminal closes. SSH, tmux, and multiple Claude Code processes sharing one Tilix terminal are not supported by this integration.
+
 The application was written using GTK 3 and an effort was made to conform to GNOME Human Interface Guidelines (HIG). As a result, it does use CSD (i.e. the GTK HeaderBar)
 though it can be disabled if necessary. Other than GNOME, only Unity has been tested officially though users have had success with other desktop environments.
 

@@ -131,6 +131,7 @@ import gx.i18n.l10n;
 import gx.util.array;
 
 import gx.tilix.application;
+import gx.tilix.claudestatus;
 import gx.tilix.bookmark.bmchooser;
 import gx.tilix.bookmark.bmeditor;
 import gx.tilix.bookmark.manager;
@@ -218,6 +219,7 @@ private:
     Scrollbar sb;
 
     GPid gpid = 0;
+    ClaudeStatus _claudeStatus = ClaudeStatus.NONE;
 
     Box bTitle;
     MenuButton mbTitle;
@@ -4200,6 +4202,16 @@ public:
         return _terminalUUID;
     }
 
+    @property ClaudeStatus claudeStatus() {
+        return _claudeStatus;
+    }
+
+    @property void claudeStatus(ClaudeStatus value) {
+        if (_claudeStatus == value) return;
+        _claudeStatus = value;
+        onClaudeStatusChange.emit(this);
+    }
+
 // Events
 public:
     /**
@@ -4232,6 +4244,8 @@ public:
      * Triggered when the terminal title changes.
      */
     GenericEvent!(Terminal) onTitleChange;
+
+    GenericEvent!(Terminal) onClaudeStatusChange;
 
     /**
     * Triggered on a terminal key press, used by the session to synchronize input

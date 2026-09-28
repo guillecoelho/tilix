@@ -66,6 +66,8 @@ tilix_sources = [
     'source/gx/tilix/appwindow.d',
     'source/gx/tilix/closedialog.d',
     'source/gx/tilix/cmdparams.d',
+    'source/gx/tilix/claudestatus.d',
+    'source/gx/tilix/claudestatusindicator.d',
     'source/gx/tilix/colorschemes.d',
     'source/gx/tilix/common.d',
     'source/gx/tilix/constants.d',
