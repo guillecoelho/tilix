@@ -22,6 +22,13 @@ import vtec.vtetypes;
 import gx.tilix.constants;
 import gx.tilix.terminal.util;
 
+// GtkD 3.10 does not wrap this VTE API, though VTE itself provides it.
+extern(C) void vte_terminal_paste_text(VteTerminal* terminal, const(char)* text);
+
+void pasteText(ExtendedVTE terminal, string text) {
+    vte_terminal_paste_text(terminal.getTerminalStruct(), Str.toStringz(text));
+}
+
 enum TerminalScreen {
     NORMAL = 0,
     ALTERNATE = 1
